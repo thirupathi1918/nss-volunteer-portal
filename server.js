@@ -1,4 +1,4 @@
-require('dotenv').config(); // Loads your .env variables
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const app = express();
@@ -6,22 +6,31 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-// 1. Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log("NSS Database Connected Successfully"))
-    .catch(err => console.error("Database Connection Error:", err));
+// 1. IMPROVED: Serverless Database Connection Strategy
+let isConnected = false;
+const connectDB = async () => {
+    if (isConnected) return;
+    try {
+        await mongoose.connect(process.env.MONGODB_URI);
+        isConnected = true;
+        console.log("✅ NSS Database Connected Successfully");
+    } catch (err) {
+        console.error("❌ Database Connection Error:", err);
+    }
+};
 
 // 2. Define Data Schemas
-const User = mongoose.model('User', new mongoose.Schema({
+const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
     name: String, email: { type: String, unique: true }, password: String, role: String
 }));
 
-const Donation = mongoose.model('Donation', new mongoose.Schema({
+const Donation = mongoose.models.Donation || mongoose.model('Donation', new mongoose.Schema({
     id: Number, donorEmail: String, amount: Number, status: String, timestamp: String
 }));
 
-// 3. Auth Routes
+// 3. Auth Routes (Updated with connectDB)
 app.post('/api/auth', async (req, res) => {
+    await connectDB(); // Ensure DB is connected
     const { email, password, role, action, name } = req.body;
     const user = await User.findOne({ email });
 
@@ -38,8 +47,9 @@ app.post('/api/auth', async (req, res) => {
     }
 });
 
-// 4. Donation Routes
+// 4. Donation Routes (Updated with connectDB)
 app.post('/api/initiate-donation', async (req, res) => {
+    await connectDB();
     const count = await Donation.countDocuments();
     const donation = new Donation({
         id: count, donorEmail: req.body.email, amount: Number(req.body.amount),
@@ -50,12 +60,14 @@ app.post('/api/initiate-donation', async (req, res) => {
 });
 
 app.post('/api/update-donation', async (req, res) => {
+    await connectDB();
     const { id, status } = req.body;
     await Donation.findOneAndUpdate({ id: parseInt(id) }, { status });
     res.json({ status: "success" });
 });
 
 app.get('/api/admin-stats', async (req, res) => {
+    await connectDB();
     const allUsers = await User.find();
     const allDonations = await Donation.find();
     const total = allDonations.filter(d => d.status === 'success').reduce((s, d) => s + d.amount, 0);
