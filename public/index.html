@@ -41,14 +41,14 @@
             <div class="input-group">
                 <label for="role" style="display: block; text-align: left; margin-bottom: 5px; color: #4a5568; font-weight: 600;">Access Level:</label>
                 <select id="role">
-                    <option value="user">Volunteer / Donor</option>
+                    <option value="volunteer">Volunteer / Donor</option>
                     <option value="admin">Administrator</option>
                 </select>
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <button type="button" onclick="handleAuth('login')" style="background: var(--primary);">Login</button>
-                <button type="button" onclick="handleAuth('register')" style="background: var(--secondary);">Register</button>
+                <button type="button" onclick="handleAuth('login')" style="background: #6366f1; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; flex: 1;">Login</button>
+                <button type="button" onclick="handleAuth('register')" style="background: #4f46e5; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; flex: 1;">Register</button>
             </div>
             
             <p id="toggleText" style="margin-top: 20px; font-size: 0.85rem; cursor: pointer; color: #6366f1; font-weight: 600;" onclick="toggleForm()">Need an account? Register here</p>
@@ -67,35 +67,44 @@
 
         async function handleAuth(action) {
             const emailValue = document.getElementById('email').value;
+            const roleValue = document.getElementById('role').value;
             const formData = {
                 name: document.getElementById('name').value,
                 email: emailValue,
                 password: document.getElementById('password').value,
-                role: document.getElementById('role').value,
+                role: roleValue,
                 action: action
             };
 
-            const res = await fetch('/auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
+            // FIX: Changed path to /api/auth for Vercel
+            try {
+                const res = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
 
-            const result = await res.json();
+                const result = await res.json();
 
-            if (res.ok) {
-                // IMPORTANT: Store the email so the dashboard knows who is logged in
-                localStorage.setItem('userEmail', emailValue);
-                window.location.href = formData.role === 'admin' ? '/admin.html' : '/dashboard.html';
-            } else {
-                alert(result.message);
+                if (res.ok) {
+                    localStorage.setItem('userEmail', emailValue);
+                    // Ensure the paths match your actual filenames
+                    window.location.href = roleValue === 'admin' ? '/admin.html' : '/dashboard.html';
+                } else {
+                    alert(result.message || "Authentication failed");
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+                alert("Cannot connect to server. Check your internet.");
             }
         }
 
         async function forgotPassword() {
             const email = document.getElementById('email').value;
             if(!email) return alert("Enter email first!");
-            const res = await fetch('/forgot-password', {
+            
+            // FIX: Changed path to /api/forgot-password for Vercel
+            const res = await fetch('/api/forgot-password', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ email })
