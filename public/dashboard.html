@@ -58,10 +58,10 @@
         if (!userEmail) window.location.href = 'index.html';
         document.getElementById('dispEmail').innerText = userEmail;
 
-        // Fetch latest history to update the table
+        // UPDATED: Fetch latest history with /api/ prefix
         async function loadHistory() {
             try {
-                const res = await fetch('/admin-stats');
+                const res = await fetch('/api/admin-stats');
                 const data = await res.json();
                 const history = data.allDonations.filter(d => d.donorEmail === userEmail);
                 document.getElementById('history').innerHTML = history.reverse().map(d => `
@@ -87,8 +87,8 @@
             labelEl.innerText = "CONNECTING TO SERVER...";
 
             try {
-                // 1. Create a pending donation entry in your backend
-                const initRes = await fetch('/initiate-donation', {
+                // UPDATED: 1. Create entry with /api/ prefix
+                const initRes = await fetch('/api/initiate-donation', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ amount, email: userEmail })
@@ -97,14 +97,14 @@
 
                 // 2. Configure and Open Razorpay Standard Checkout
                 const options = {
-                    "key": "rzp_test_S5LixUrRSjjgZq", // OFFICIAL TEST KEY
-                    "amount": amount * 100, // Amount is in paise
+                    "key": "rzp_test_S5LixUrRSjjgZq", 
+                    "amount": amount * 100, 
                     "currency": "INR",
                     "name": "NSS NGO Portal",
                     "description": "Test Transaction for NSS Project",
                     "handler": async function (response) {
-                        // SUCCESS: Update status to success
-                        await fetch('/update-donation', {
+                        // SUCCESS: UPDATED with /api/ prefix
+                        await fetch('/api/update-donation', {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify({ id: donation.id, status: 'success' })
@@ -114,8 +114,8 @@
                     },
                     "modal": {
                         "ondismiss": async function() {
-                            // CANCEL: Update status to failed so Admin Portal doesn't show 'Pending'
-                            await fetch('/update-donation', {
+                            // CANCEL: UPDATED with /api/ prefix
+                            await fetch('/api/update-donation', {
                                 method: 'POST',
                                 headers: {'Content-Type': 'application/json'},
                                 body: JSON.stringify({ id: donation.id, status: 'failed' })
@@ -131,7 +131,7 @@
 
             } catch (e) { 
                 labelEl.innerText = "CONNECTION ERROR"; 
-                alert("Server Connection Failed. Make sure node server.js is running.");
+                alert("Server Connection Failed. Make sure your Vercel backend is running.");
             }
         });
 
