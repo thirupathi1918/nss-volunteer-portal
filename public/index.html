@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSS NGO Portal - Access</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-animation">
+        <img src="https://img.icons8.com/fluency/96/filled-like.png" class="floating-img" alt="heart">
+        <img src="https://img.icons8.com/fluency/96/handshake.png" class="floating-img" alt="support">
+        <img src="https://img.icons8.com/fluency/96/community.png" class="floating-img" alt="community">
+        <img src="https://img.icons8.com/fluency/96/charity.png" class="floating-img" alt="charity">
+        <img src="https://img.icons8.com/fluency/96/trust.png" class="floating-img" alt="trust">
+        <img src="https://img.icons8.com/fluency/96/diversity.png" class="floating-img" alt="diversity">
+        <img src="https://img.icons8.com/fluency/96/checked-shield.png" class="floating-img" alt="safe">
+    </div>
+
+    <div class="container">
+        <div class="icon-header"><span style="font-size: 40px;">🌟</span></div>
+        <h1 id="formTitle">Welcome Back</h1>
+        <p id="formSub">Access the NSS Portal to manage your contributions.</p>
+        
+        <form id="authForm">
+            <div class="input-group" id="nameGroup" style="display: none;">
+                <input type="text" id="name" placeholder="Full Name">
+            </div>
+            
+            <div class="input-group">
+                <input type="email" id="email" placeholder="Email Address" required>
+            </div>
+            
+            <div class="input-group">
+                <input type="password" id="password" placeholder="Password" required>
+            </div>
+            
+            <a href="#" onclick="forgotPassword()" style="font-size: 0.8rem; color: #6366f1; display: block; text-align: left; margin: -5px 0 15px 5px; text-decoration: none; font-weight: 600;">Forgot Password?</a>
+            
+            <div class="input-group">
+                <label for="role" style="display: block; text-align: left; margin-bottom: 5px; color: #4a5568; font-weight: 600;">Access Level:</label>
+                <select id="role">
+                    <option value="user">Volunteer / Donor</option>
+                    <option value="admin">Administrator</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="handleAuth('login')" style="background: var(--primary);">Login</button>
+                <button type="button" onclick="handleAuth('register')" style="background: var(--secondary);">Register</button>
+            </div>
+            
+            <p id="toggleText" style="margin-top: 20px; font-size: 0.85rem; cursor: pointer; color: #6366f1; font-weight: 600;" onclick="toggleForm()">Need an account? Register here</p>
+        </form>
+    </div>
+
+    <script>
+        let isLogin = true;
+
+        function toggleForm() {
+            isLogin = !isLogin;
+            document.getElementById('nameGroup').style.display = isLogin ? "none" : "block";
+            document.getElementById('formTitle').innerText = isLogin ? "Welcome Back" : "Join the Cause";
+            document.getElementById('toggleText').innerText = isLogin ? "Need an account? Register here" : "Already have an account? Login";
+        }
+
+        async function handleAuth(action) {
+            const emailValue = document.getElementById('email').value;
+            const formData = {
+                name: document.getElementById('name').value,
+                email: emailValue,
+                password: document.getElementById('password').value,
+                role: document.getElementById('role').value,
+                action: action
+            };
+
+            const res = await fetch('/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await res.json();
+
+            if (res.ok) {
+                // IMPORTANT: Store the email so the dashboard knows who is logged in
+                localStorage.setItem('userEmail', emailValue);
+                window.location.href = formData.role === 'admin' ? '/admin.html' : '/dashboard.html';
+            } else {
+                alert(result.message);
+            }
+        }
+
+        async function forgotPassword() {
+            const email = document.getElementById('email').value;
+            if(!email) return alert("Enter email first!");
+            const res = await fetch('/forgot-password', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            alert(data.message);
+        }
+    </script>
+</body>
+</html>

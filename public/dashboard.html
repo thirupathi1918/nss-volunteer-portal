@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSS - Volunteer Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div style="position: fixed; top: 10px; left: 10px; z-index: 1000;">
+        <button onclick="handleLogout()" class="nav-btn-small logout-red">🚪 Logout</button>
+    </div>
+
+    <div class="background-animation">
+        <img src="https://img.icons8.com/fluency/96/filled-like.png" class="floating-img" alt="heart">
+        <img src="https://img.icons8.com/fluency/96/handshake.png" class="floating-img" alt="support">
+    </div>
+
+    <div class="container" style="width: 550px; max-width: 95%; margin-top: 50px;">
+        <h2>NSS Volunteer Dashboard</h2>
+        <div id="userProfile" style="text-align: left; background: rgba(240, 244, 248, 0.7); padding: 20px; border-radius: 15px; margin-bottom: 25px;">
+            <p><strong>Logged in:</strong> <span id="dispEmail" style="color: #4a5568;"></span></p>
+        </div>
+
+        <h3>Support Our Mission</h3>
+        <p style="font-size: 0.9rem; margin-bottom: 15px; color: #718096;">Official Razorpay Sandbox Integration.</p>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="number" id="amt" placeholder="Amount (₹)" min="1">
+            <button id="payBtn">Pay Now (Sandbox)</button>
+        </div>
+
+        <p id="statusMsg" style="display:none; color: #6366f1; font-weight: bold; padding: 10px; background: #eef2ff; border-radius: 8px;">
+            Status: <span id="statLabel">AWAITING...</span>
+        </p>
+
+        <hr style="border: 0; height: 1px; background: #e2e8f0; margin: 30px 0;">
+
+        <h3>My Donation History</h3>
+        <div style="overflow-x: auto;">
+            <table style="width:100%; border-collapse: collapse;" border="1">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="history"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const userEmail = localStorage.getItem('userEmail');
+        if (!userEmail) window.location.href = 'index.html';
+        document.getElementById('dispEmail').innerText = userEmail;
+
+        // Fetch latest history to update the table
+        async function loadHistory() {
+            try {
+                const res = await fetch('/admin-stats');
+                const data = await res.json();
+                const history = data.allDonations.filter(d => d.donorEmail === userEmail);
+                document.getElementById('history').innerHTML = history.reverse().map(d => `
+                    <tr>
+                        <td>${d.timestamp}</td>
+                        <td>₹${d.amount}</td>
+                        <td style="font-weight: bold; color: ${d.status === 'success' ? 'green' : (d.status === 'failed' ? 'red' : 'orange')}">
+                            ${d.status.toUpperCase()}
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="3" style="text-align:center;">No history found</td></tr>';
+            } catch (err) { console.error("History error:", err); }
+        }
+
+        // Razorpay Integration Logic
+        document.getElementById('payBtn').addEventListener('click', async () => {
+            const amount = document.getElementById('amt').value;
+            if (!amount || amount <= 0) return alert("Please enter a valid amount.");
+
+            const msg = document.getElementById('statusMsg');
+            const labelEl = document.getElementById('statLabel');
+            msg.style.display = "block";
+            labelEl.innerText = "CONNECTING TO SERVER...";
+
+            try {
+                // 1. Create a pending donation entry in your backend
+                const initRes = await fetch('/initiate-donation', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ amount, email: userEmail })
+                });
+                const donation = await initRes.json();
+
+                // 2. Configure and Open Razorpay Standard Checkout
+                const options = {
+                    "key": "rzp_test_S5LixUrRSjjgZq", // OFFICIAL TEST KEY
+                    "amount": amount * 100, // Amount is in paise
+                    "currency": "INR",
+                    "name": "NSS NGO Portal",
+                    "description": "Test Transaction for NSS Project",
+                    "handler": async function (response) {
+                        // SUCCESS: Update status to success
+                        await fetch('/update-donation', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ id: donation.id, status: 'success' })
+                        });
+                        labelEl.innerText = "SUCCESSFUL";
+                        loadHistory();
+                    },
+                    "modal": {
+                        "ondismiss": async function() {
+                            // CANCEL: Update status to failed so Admin Portal doesn't show 'Pending'
+                            await fetch('/update-donation', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({ id: donation.id, status: 'failed' })
+                            });
+                            labelEl.innerText = "CANCELLED";
+                            loadHistory();
+                        }
+                    }
+                };
+                
+                const rzp = new Razorpay(options);
+                rzp.open();
+
+            } catch (e) { 
+                labelEl.innerText = "CONNECTION ERROR"; 
+                alert("Server Connection Failed. Make sure node server.js is running.");
+            }
+        });
+
+        function handleLogout() {
+            localStorage.removeItem('userEmail');
+            window.location.href = 'index.html';
+        }
+
+        loadHistory(); // Initial load of data
+    </script>
+</body>
+</html>

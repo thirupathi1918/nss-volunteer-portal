@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSS Admin - Management Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div style="position: fixed; top: 20px; left: 20px; display: flex; gap: 10px; z-index: 1000;">
+        <button onclick="window.location.href='index.html'" class="nav-btn-small">🏠 Home</button>
+        <button onclick="handleLogout()" class="nav-btn-small logout-red">🚪 Logout</button>
+    </div>
+
+    <div class="background-animation">
+        <img src="https://img.icons8.com/fluency/96/filled-like.png" class="floating-img" alt="heart">
+        <img src="https://img.icons8.com/fluency/96/handshake.png" class="floating-img" alt="support">
+        <img src="https://img.icons8.com/fluency/96/community.png" class="floating-img" alt="community">
+        <img src="https://img.icons8.com/fluency/96/charity.png" class="floating-img" alt="charity">
+        <img src="https://img.icons8.com/fluency/96/trust.png" class="floating-img" alt="trust">
+        <img src="https://img.icons8.com/fluency/96/diversity.png" class="floating-img" alt="diversity">
+        <img src="https://img.icons8.com/fluency/96/checked-shield.png" class="floating-img" alt="safe">
+    </div>
+
+    <div class="container" style="width: 95%; max-width: 900px;">
+        <div class="icon-header">
+            <span style="font-size: 40px;">🛡️</span>
+        </div>
+        <h1>Admin Management</h1>
+        <p>Monitor registrations and donation analytics transparently.</p>
+        
+        <div style="display:flex; justify-content: space-around; margin-bottom: 25px; background: rgba(240, 244, 248, 0.7); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.5);">
+            <div>
+                <p style="margin:0; color: #718096; font-size: 0.9rem;">Total Registrations</p>
+                <b id="regCount" style="font-size: 1.5rem; color: #1a3a5f;">0</b>
+            </div>
+            <div style="width: 1px; background: #cbd5e0;"></div>
+            <div>
+                <p style="margin:0; color: #718096; font-size: 0.9rem;">Total Funds Collected</p>
+                <b id="totalAmt" style="font-size: 1.5rem; color: #10b981;">₹0</b>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin:0;">Registered Accounts</h3>
+            <button onclick="exportToCSV('userTable')" style="background: #2a9d8f; width: auto; padding: 8px 15px; font-size: 0.8rem; margin:0;">📥 Export Users</button>
+        </div>
+        <div style="overflow-x: auto; margin-bottom: 30px; border-radius: 12px; border: 1px solid #e2e8f0; background: white;">
+            <table id="userTable" style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8fafc;">
+                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Name</th>
+                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Email</th>
+                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Role</th>
+                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody"></tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin:0;">Contribution Tracking</h3>
+            <button onclick="exportToCSV('donationTable')" style="background: #6366f1; width: auto; padding: 8px 15px; font-size: 0.8rem; margin:0;">📥 Export Donations</button>
+        </div>
+        <div style="overflow-x: auto; border-radius: 12px; border: 1px solid #e2e8f0; background: white;">
+            <table id="donationTable" style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8fafc;">
+                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Timestamp</th>
+                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Donor Name</th>
+                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Amount</th>
+                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="donationTableBody"></tbody>
+            </table>
+        </div>
+        
+        <br>
+        <button onclick="loadStats()" style="background: var(--primary); width: 200px;">Refresh Analytics</button>
+    </div>
+
+    <script>
+        const userEmail = localStorage.getItem('userEmail');
+
+        if (!userEmail) {
+            window.location.href = 'index.html';
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/admin-stats');
+                const data = await response.json();
+                
+                document.getElementById('regCount').innerText = data.totalReg;
+                document.getElementById('totalAmt').innerText = "₹" + data.totalDonations;
+
+                document.getElementById('userTableBody').innerHTML = data.allUsers.map(u => `
+                    <tr>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${u.name}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${u.email}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">
+                            <span style="font-weight:bold; color:#6366f1;">${u.role.toUpperCase()}</span>
+                        </td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">
+                            <button onclick="adminEditName('${u.email}')" style="width:auto; padding:5px 10px; font-size:0.7rem; margin:0;">Edit</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Fixed: Sort donations by newest first and applied correct status colors
+                document.getElementById('donationTableBody').innerHTML = data.allDonations
+                .slice().reverse()
+                .map(d => `
+                    <tr>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${d.timestamp}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${d.donorName || 'Anonymous'}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">₹${d.amount}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left; font-weight: bold; color: ${
+                            d.status === 'success' ? '#10b981' : 
+                            (d.status === 'failed' ? '#ef4444' : '#f59e0b')
+                        }">
+                            ${d.status.toUpperCase()}
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (err) { console.error("Refresh failed:", err); }
+        }
+
+        async function adminEditName(email) {
+            const newName = prompt("Admin: Enter new name for account " + email);
+            if (!newName || newName.trim() === "") return;
+
+            const res = await fetch('/update-profile', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, newName })
+            });
+            const result = await res.json();
+            alert(result.message);
+            loadStats();
+        }
+
+        function handleLogout() {
+            if (confirm("Are you sure you want to log out of the Admin Panel?")) {
+                localStorage.removeItem('userEmail');
+                window.location.href = 'index.html';
+            }
+        }
+
+        function exportToCSV(tableId) {
+            const table = document.getElementById(tableId);
+            let csv = [];
+            const rows = table.querySelectorAll("tr");
+            for (let i = 0; i < rows.length; i++) {
+                const row = [], cols = rows[i].querySelectorAll("td, th");
+                let length = (tableId === 'userTable') ? cols.length - 1 : cols.length;
+                for (let j = 0; j < length; j++) row.push('"' + cols[j].innerText + '"');
+                csv.push(row.join(","));
+            }
+            const blob = new Blob([csv.join("\n")], { type: "text/csv" });
+            const a = document.createElement("a");
+            a.download = `NSS_${tableId}_Report.csv`;
+            a.href = URL.createObjectURL(blob);
+            a.click();
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>
