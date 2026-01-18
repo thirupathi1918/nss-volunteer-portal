@@ -1,16 +1,17 @@
-require('dotenv').config(); // Load MongoDB URI and Secrets
+require('dotenv').config(); // Loads your .env variables
 const express = require('express');
 const mongoose = require('mongoose');
 const app = express();
 
 app.use(express.json());
+app.use(express.static('public'));
 
-// 1. Database Connection
+// 1. Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log("NSS MongoDB Connected"))
-    .catch(err => console.error("MongoDB Connection Failed:", err));
+    .then(() => console.log("NSS Database Connected Successfully"))
+    .catch(err => console.error("Database Connection Error:", err));
 
-// 2. Data Models
+// 2. Define Data Schemas
 const User = mongoose.model('User', new mongoose.Schema({
     name: String, email: { type: String, unique: true }, password: String, role: String
 }));
@@ -19,21 +20,25 @@ const Donation = mongoose.model('Donation', new mongoose.Schema({
     id: Number, donorEmail: String, amount: Number, status: String, timestamp: String
 }));
 
-// 3. API Routes
+// 3. Auth Routes
 app.post('/api/auth', async (req, res) => {
-    const { name, email, password, role, action } = req.body;
+    const { email, password, role, action, name } = req.body;
     const user = await User.findOne({ email });
+
     if (action === 'login') {
-        if (user && user.password === password && user.role === role) return res.json({ status: "success", user });
+        if (user && user.password === password && user.role === role) {
+            return res.json({ status: "success", user });
+        }
         return res.status(401).json({ message: "Invalid Credentials" });
     }
     if (action === 'register') {
-        if (user) return res.status(400).json({ message: "User exists" });
+        if (user) return res.status(400).json({ message: "User already exists" });
         await new User({ name, email, password, role }).save();
         return res.json({ status: "success" });
     }
 });
 
+// 4. Donation Routes
 app.post('/api/initiate-donation', async (req, res) => {
     const count = await Donation.countDocuments();
     const donation = new Donation({
@@ -57,10 +62,10 @@ app.get('/api/admin-stats', async (req, res) => {
     res.json({ totalReg: allUsers.length, totalDonations: total, allUsers, allDonations });
 });
 
-// 4. Export for Vercel
+// 5. Export for Vercel
 module.exports = app;
 
-// Local testing fallback
+// Local Development
 if (process.env.NODE_ENV !== 'production') {
-    app.listen(3000, () => console.log("Server live at http://localhost:3000"));
+    app.listen(3000, () => console.log("Local server: http://localhost:3000"));
 }
