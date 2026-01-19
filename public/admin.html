@@ -54,8 +54,7 @@
         <p style="margin-top: 15px; font-family: 'Inter', sans-serif; color: #4a5568;">Accessing secure admin data...</p>
     </div>
 
-    <div style="position: fixed; top: 20px; left: 20px; display: flex; gap: 10px; z-index: 1000;">
-        <button onclick="window.location.href='index.html'" class="nav-btn-small">🏠 Home</button>
+    <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
         <button onclick="handleLogout()" class="nav-btn-small logout-red">🚪 Logout</button>
     </div>
 
@@ -140,12 +139,14 @@
     </div>
 
     <script>
+        // Loader removal
         window.addEventListener('load', () => {
             const loader = document.getElementById('loader');
             loader.style.opacity = '0';
             setTimeout(() => loader.style.display = 'none', 500);
         });
 
+        // Session check
         const userEmail = localStorage.getItem('userEmail');
         if (!userEmail) {
             window.location.href = 'index.html';
@@ -153,6 +154,7 @@
             document.getElementById('adminDispEmail').innerText = userEmail;
         }
 
+        // Filtering logic
         function filterUsers() {
             const searchTerm = document.getElementById('adminSearch').value.toLowerCase();
             const roleTerm = document.getElementById('roleFilter').value.toLowerCase();
@@ -169,6 +171,7 @@
             });
         }
 
+        // Load Data from API
         async function loadStats() {
             try {
                 const response = await fetch('/api/admin-stats');
@@ -182,7 +185,7 @@
                 document.getElementById('regCount').innerText = data.totalReg;
                 document.getElementById('totalAmt').innerText = "₹" + data.totalDonations;
 
-                // UPDATED: Table now includes Delete button
+                // User Table Rows
                 document.getElementById('userTableBody').innerHTML = data.allUsers.map(u => `
                     <tr>
                         <td style="padding: 12px; border-bottom: 1px solid #eee;">${u.name}</td>
@@ -198,6 +201,7 @@
                         </td>
                     </tr>`).join('');
 
+                // Donation Table Rows
                 document.getElementById('donationTableBody').innerHTML = data.allDonations.slice().reverse().map(d => `
                     <tr>
                         <td style="padding: 12px; border-bottom: 1px solid #eee;">${d.timestamp}</td>
@@ -212,6 +216,7 @@
             } catch (err) { console.error("Refresh failed:", err); }
         }
 
+        // Action: Edit Profile
         async function adminEditName(email) {
             const newName = prompt("Admin Action: Enter new display name for " + email);
             if (!newName || newName.trim() === "") return;
@@ -234,7 +239,7 @@
             }
         }
 
-        // NEW: Delete User Logic
+        // Action: Delete User
         async function adminDeleteUser(email) {
             if (email === userEmail) return alert("Security Alert: You cannot delete your own active admin account.");
 
@@ -256,6 +261,7 @@
             }
         }
 
+        // Updated Logout: Confirms and returns to index.html
         function handleLogout() {
             if (confirm("Log out of Admin Panel?")) {
                 localStorage.removeItem('userEmail');
@@ -263,6 +269,7 @@
             }
         }
 
+        // CSV Export Logic
         function exportToCSV(tableId) {
             const table = document.getElementById(tableId);
             let csv = [];
