@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* NEW: Admin Loader Styles */
         #loader {
             position: fixed;
             width: 100%;
@@ -24,11 +23,29 @@
             width: 50px;
             height: 50px;
             border: 5px solid #f3f3f3;
-            border-top: 5px solid #ef4444; /* Red spinner for Admin theme */
+            border-top: 5px solid #ef4444;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Filter styling for cleaner UI */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .filter-bar input, .filter-bar select {
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+        }
     </style>
 </head>
 <body>
@@ -76,6 +93,16 @@
             <h3 style="margin:0;">All Registered Accounts</h3>
             <button onclick="exportToCSV('userTable')" style="background: #2a9d8f; width: auto; padding: 8px 15px; font-size: 0.8rem; margin:0;">📥 Export Users</button>
         </div>
+
+        <div class="filter-bar">
+            <input type="text" id="adminSearch" placeholder="🔍 Search by Email..." onkeyup="filterUsers()" style="flex: 2;">
+            <select id="roleFilter" onchange="filterUsers()" style="flex: 1;">
+                <option value="all">All Roles</option>
+                <option value="volunteer">Volunteers</option>
+                <option value="admin">Admins</option>
+            </select>
+        </div>
+
         <div style="overflow-x: auto; margin-bottom: 30px; border-radius: 12px; border: 1px solid #e2e8f0; background: white;">
             <table id="userTable" style="width:100%; border-collapse: collapse;">
                 <thead>
@@ -113,19 +140,34 @@
     </div>
 
     <script>
-        // NEW: Loader Removal Script
         window.addEventListener('load', () => {
             const loader = document.getElementById('loader');
             loader.style.opacity = '0';
             setTimeout(() => loader.style.display = 'none', 500);
         });
 
-        // AUTH CHECK & PROFILE HEADER
         const userEmail = localStorage.getItem('userEmail');
         if (!userEmail) {
             window.location.href = 'index.html';
         } else {
             document.getElementById('adminDispEmail').innerText = userEmail;
+        }
+
+        // NEW: Filter Logic for Registered Users
+        function filterUsers() {
+            const searchTerm = document.getElementById('adminSearch').value.toLowerCase();
+            const roleTerm = document.getElementById('roleFilter').value.toLowerCase();
+            const rows = document.querySelectorAll('#userTableBody tr');
+
+            rows.forEach(row => {
+                const email = row.cells[1].innerText.toLowerCase();
+                const role = row.cells[2].innerText.toLowerCase();
+                
+                const matchesSearch = email.includes(searchTerm);
+                const matchesRole = (roleTerm === 'all' || role.includes(roleTerm));
+
+                row.style.display = (matchesSearch && matchesRole) ? "" : "none";
+            });
         }
 
         async function loadStats() {
@@ -165,6 +207,7 @@
                         </td>
                     </tr>`).join('');
 
+                filterUsers(); // Re-apply current filters after data refresh
             } catch (err) { console.error("Refresh failed:", err); }
         }
 
@@ -202,6 +245,7 @@
             let csv = [];
             const rows = table.querySelectorAll("tr");
             for (let i = 0; i < rows.length; i++) {
+                if (rows[i].style.display === "none") continue; // Export only filtered data
                 const row = [], cols = rows[i].querySelectorAll("td, th");
                 let length = (tableId === 'userTable') ? cols.length - 1 : cols.length;
                 for (let j = 0; j < length; j++) row.push('"' + cols[j].innerText + '"');
