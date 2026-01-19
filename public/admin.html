@@ -153,7 +153,6 @@
             document.getElementById('adminDispEmail').innerText = userEmail;
         }
 
-        // NEW: Filter Logic for Registered Users
         function filterUsers() {
             const searchTerm = document.getElementById('adminSearch').value.toLowerCase();
             const roleTerm = document.getElementById('roleFilter').value.toLowerCase();
@@ -183,6 +182,7 @@
                 document.getElementById('regCount').innerText = data.totalReg;
                 document.getElementById('totalAmt').innerText = "₹" + data.totalDonations;
 
+                // UPDATED: Table now includes Delete button
                 document.getElementById('userTableBody').innerHTML = data.allUsers.map(u => `
                     <tr>
                         <td style="padding: 12px; border-bottom: 1px solid #eee;">${u.name}</td>
@@ -192,8 +192,9 @@
                                 ${u.role.toUpperCase()}
                             </span>
                         </td>
-                        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">
+                        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center; display: flex; gap: 5px; justify-content: center;">
                             <button onclick="adminEditName('${u.email}')" style="width:auto; padding:5px 10px; font-size:0.7rem; background:#4a5568;">Edit</button>
+                            <button onclick="adminDeleteUser('${u.email}')" style="width:auto; padding:5px 10px; font-size:0.7rem; background:#ef4444;">Delete</button>
                         </td>
                     </tr>`).join('');
 
@@ -207,7 +208,7 @@
                         </td>
                     </tr>`).join('');
 
-                filterUsers(); // Re-apply current filters after data refresh
+                filterUsers(); 
             } catch (err) { console.error("Refresh failed:", err); }
         }
 
@@ -233,6 +234,28 @@
             }
         }
 
+        // NEW: Delete User Logic
+        async function adminDeleteUser(email) {
+            if (email === userEmail) return alert("Security Alert: You cannot delete your own active admin account.");
+
+            if (confirm(`CRITICAL ACTION: Are you sure you want to PERMANENTLY delete account: ${email}? This cannot be undone.`)) {
+                try {
+                    const res = await fetch('/api/delete-user', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ email })
+                    });
+                    const result = await res.json();
+                    if (result.status === "success") {
+                        alert(result.message);
+                        loadStats();
+                    }
+                } catch (e) {
+                    alert("Connection error: Could not reach server to process deletion.");
+                }
+            }
+        }
+
         function handleLogout() {
             if (confirm("Log out of Admin Panel?")) {
                 localStorage.removeItem('userEmail');
@@ -245,7 +268,7 @@
             let csv = [];
             const rows = table.querySelectorAll("tr");
             for (let i = 0; i < rows.length; i++) {
-                if (rows[i].style.display === "none") continue; // Export only filtered data
+                if (rows[i].style.display === "none") continue; 
                 const row = [], cols = rows[i].querySelectorAll("td, th");
                 let length = (tableId === 'userTable') ? cols.length - 1 : cols.length;
                 for (let j = 0; j < length; j++) row.push('"' + cols[j].innerText + '"');

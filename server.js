@@ -47,7 +47,14 @@ app.post('/api/auth', async (req, res) => {
     }
 });
 
-// NEW: Update Profile Route for Admin/Donor edits
+// NEW: Forgot Password Placeholder
+app.post('/api/forgot-password', async (req, res) => {
+    res.json({ message: "Password reset link sent to your email (Sandbox Mode)." });
+});
+
+// --- ADMIN MANAGEMENT ROUTES ---
+
+// UPDATE Profile Route
 app.post('/api/update-profile', async (req, res) => {
     await connectDB();
     const { email, newName } = req.body;
@@ -64,13 +71,29 @@ app.post('/api/update-profile', async (req, res) => {
     }
 });
 
-// NEW: Forgot Password Placeholder
-app.post('/api/forgot-password', async (req, res) => {
-    // In a real app, you would integrate an email service here.
-    res.json({ message: "Password reset link sent to your email (Sandbox Mode)." });
+// DELETE User Route
+app.post('/api/delete-user', async (req, res) => {
+    await connectDB();
+    const { email } = req.body;
+    try {
+        const deletedUser = await User.findOneAndDelete({ email: email });
+        if (!deletedUser) return res.status(404).json({ status: "error", message: "User not found" });
+        res.json({ status: "success", message: "User permanently removed from database." });
+    } catch (err) {
+        res.status(500).json({ status: "error", message: "Failed to delete user" });
+    }
 });
 
-// 4. Donation Routes
+app.get('/api/admin-stats', async (req, res) => {
+    await connectDB();
+    const allUsers = await User.find();
+    const allDonations = await Donation.find();
+    const total = allDonations.filter(d => d.status === 'success').reduce((s, d) => s + d.amount, 0);
+    res.json({ totalReg: allUsers.length, totalDonations: total, allUsers, allDonations });
+});
+
+// --- DONATION ROUTES ---
+
 app.post('/api/initiate-donation', async (req, res) => {
     await connectDB();
     const count = await Donation.countDocuments();
@@ -87,14 +110,6 @@ app.post('/api/update-donation', async (req, res) => {
     const { id, status } = req.body;
     await Donation.findOneAndUpdate({ id: parseInt(id) }, { status });
     res.json({ status: "success" });
-});
-
-app.get('/api/admin-stats', async (req, res) => {
-    await connectDB();
-    const allUsers = await User.find();
-    const allDonations = await Donation.find();
-    const total = allDonations.filter(d => d.status === 'success').reduce((s, d) => s + d.amount, 0);
-    res.json({ totalReg: allUsers.length, totalDonations: total, allUsers, allDonations });
 });
 
 // 5. Export for Vercel
