@@ -54,7 +54,7 @@ In compliance with project standards:
 - **Transparency:** Failed and pending payment attempts are clearly recorded in the database for audit purposes.
 
 ## 🛠️ Setup Instructions
-1. Clone the repo: `git clone [Your Repo Link]`
+1. Clone the repo: https://github.com/thirupathi1918/nss-volunteer-portal
 2. Install dependencies: `npm install`
 3. Configure `.env`: Add your `MONGODB_URI`
 4. Run locally: `node server.js`
