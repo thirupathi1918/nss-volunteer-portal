@@ -8,7 +8,7 @@
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* NEW: Dashboard Loader Styles */
+        /* Dashboard Loader Styles */
         #loader {
             position: fixed;
             width: 100%;
@@ -30,16 +30,38 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Profile Header Styling */
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 25px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
+    <div class="user-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 24px;">👤</span>
+            <div>
+                <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Volunteer Account</p>
+                <b id="header-user-email" style="color: #1e293b; font-size: 0.95rem;">Loading...</b>
+            </div>
+        </div>
+        <button onclick="handleLogout()" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: background 0.2s;">🚪 Logout</button>
+    </div>
+
     <div id="loader">
         <div class="spinner"></div>
         <p style="margin-top: 15px; font-family: 'Inter', sans-serif; color: #4a5568;">Syncing your dashboard...</p>
-    </div>
-
-    <div style="position: fixed; top: 10px; left: 10px; z-index: 1000;">
-        <button onclick="handleLogout()" class="nav-btn-small logout-red">🚪 Logout</button>
     </div>
 
     <div class="background-animation">
@@ -47,10 +69,10 @@
         <img src="https://img.icons8.com/fluency/96/handshake.png" class="floating-img" alt="support">
     </div>
 
-    <div class="container" style="width: 550px; max-width: 95%; margin-top: 50px;">
+    <div class="container" style="width: 550px; max-width: 95%; margin-top: 30px;">
         <h2>NSS Volunteer Dashboard</h2>
         <div id="userProfile" style="text-align: left; background: rgba(240, 244, 248, 0.7); padding: 20px; border-radius: 15px; margin-bottom: 25px;">
-            <p><strong>Logged in:</strong> <span id="dispEmail" style="color: #4a5568;"></span></p>
+            <p><strong>Registered Email:</strong> <span id="dispEmail" style="color: #4a5568;"></span></p>
         </div>
 
         <h3>Support Our Mission</h3>
@@ -83,36 +105,45 @@
     </div>
 
     <script>
-        // NEW: Loader Removal Script
+        // Initial setup and Session Header check
+        document.addEventListener('DOMContentLoaded', () => {
+            const loggedInEmail = localStorage.getItem('userEmail');
+            if (loggedInEmail) {
+                document.getElementById('header-user-email').innerText = loggedInEmail;
+                document.getElementById('dispEmail').innerText = loggedInEmail;
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Loader Removal Script
         window.addEventListener('load', () => {
             const loader = document.getElementById('loader');
             loader.style.opacity = '0';
             setTimeout(() => loader.style.display = 'none', 500);
         });
 
-        const userEmail = localStorage.getItem('userEmail');
-        if (!userEmail) window.location.href = 'index.html';
-        document.getElementById('dispEmail').innerText = userEmail;
-
         async function loadHistory() {
+            const userEmail = localStorage.getItem('userEmail');
             try {
                 const res = await fetch('/api/admin-stats');
                 const data = await res.json();
                 const history = data.allDonations.filter(d => d.donorEmail === userEmail);
                 document.getElementById('history').innerHTML = history.reverse().map(d => `
                     <tr>
-                        <td>${d.timestamp}</td>
-                        <td>₹${d.amount}</td>
-                        <td style="font-weight: bold; color: ${d.status === 'success' ? 'green' : (d.status === 'failed' ? 'red' : 'orange')}">
+                        <td style="padding: 10px;">${d.timestamp}</td>
+                        <td style="padding: 10px;">₹${d.amount}</td>
+                        <td style="padding: 10px; font-weight: bold; color: ${d.status === 'success' ? 'green' : (d.status === 'failed' ? 'red' : 'orange')}">
                             ${d.status.toUpperCase()}
                         </td>
                     </tr>
-                `).join('') || '<tr><td colspan="3" style="text-align:center;">No history found</td></tr>';
+                `).join('') || '<tr><td colspan="3" style="text-align:center; padding: 10px;">No history found</td></tr>';
             } catch (err) { console.error("History error:", err); }
         }
 
         document.getElementById('payBtn').addEventListener('click', async () => {
             const amount = document.getElementById('amt').value;
+            const userEmail = localStorage.getItem('userEmail');
             if (!amount || amount <= 0) return alert("Please enter a valid amount.");
 
             const msg = document.getElementById('statusMsg');
@@ -166,8 +197,10 @@
         });
 
         function handleLogout() {
-            localStorage.removeItem('userEmail');
-            window.location.href = 'index.html';
+            if (confirm("Are you sure you want to logout?")) {
+                localStorage.removeItem('userEmail');
+                window.location.href = 'index.html';
+            }
         }
 
         loadHistory(); 

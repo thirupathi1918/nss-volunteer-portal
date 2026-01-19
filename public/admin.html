@@ -46,16 +46,38 @@
             border-radius: 8px;
             font-family: 'Inter', sans-serif;
         }
+
+        /* Profile Header Styling */
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 25px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
+    <div class="user-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 24px;">🛡️</span>
+            <div>
+                <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Admin Account</p>
+                <b id="header-user-email" style="color: #1e293b; font-size: 0.95rem;">Loading...</b>
+            </div>
+        </div>
+        <button onclick="handleLogout()" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: background 0.2s;">🚪 Logout</button>
+    </div>
+
     <div id="loader">
         <div class="spinner"></div>
         <p style="margin-top: 15px; font-family: 'Inter', sans-serif; color: #4a5568;">Accessing secure admin data...</p>
-    </div>
-
-    <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
-        <button onclick="handleLogout()" class="nav-btn-small logout-red">🚪 Logout</button>
     </div>
 
     <div class="background-animation">
@@ -65,13 +87,13 @@
         <img src="https://img.icons8.com/fluency/96/charity.png" class="floating-img" alt="charity">
     </div>
 
-    <div class="container" style="width: 95%; max-width: 900px;">
+    <div class="container" style="width: 95%; max-width: 900px; margin-top: 30px;">
         <div class="icon-header"><span style="font-size: 40px;">🛡️</span></div>
         <h1>Admin Management</h1>
         
         <div id="adminProfile" style="text-align: left; background: rgba(99, 102, 241, 0.1); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(99, 102, 241, 0.2);">
-            <p style="margin: 0; font-size: 0.9rem; color: #4a5568;"><strong>Admin Session:</strong></p>
-            <p style="margin: 5px 0 0 0; color: #1a3a5f;"><span id="adminDispName">Loading Name...</span> (<span id="adminDispEmail"></span>)</p>
+            <p style="margin: 0; font-size: 0.9rem; color: #4a5568;"><strong>Active Management Session:</strong></p>
+            <p style="margin: 5px 0 0 0; color: #1a3a5f;"><span id="adminDispName">Loading Name...</span></p>
         </div>
 
         <p>Monitor registrations and donation analytics transparently.</p>
@@ -139,20 +161,22 @@
     </div>
 
     <script>
+        // Initial setup and Session Header check
+        document.addEventListener('DOMContentLoaded', () => {
+            const loggedInEmail = localStorage.getItem('userEmail');
+            if (loggedInEmail) {
+                document.getElementById('header-user-email').innerText = loggedInEmail;
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
         // Loader removal
         window.addEventListener('load', () => {
             const loader = document.getElementById('loader');
             loader.style.opacity = '0';
             setTimeout(() => loader.style.display = 'none', 500);
         });
-
-        // Session check
-        const userEmail = localStorage.getItem('userEmail');
-        if (!userEmail) {
-            window.location.href = 'index.html';
-        } else {
-            document.getElementById('adminDispEmail').innerText = userEmail;
-        }
 
         // Filtering logic
         function filterUsers() {
@@ -177,7 +201,8 @@
                 const response = await fetch('/api/admin-stats');
                 const data = await response.json();
                 
-                const currentAdmin = data.allUsers.find(u => u.email === userEmail);
+                const loggedInEmail = localStorage.getItem('userEmail');
+                const currentAdmin = data.allUsers.find(u => u.email === loggedInEmail);
                 if (currentAdmin) {
                     document.getElementById('adminDispName').innerText = currentAdmin.name;
                 }
@@ -196,8 +221,8 @@
                             </span>
                         </td>
                         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center; display: flex; gap: 5px; justify-content: center;">
-                            <button onclick="adminEditName('${u.email}')" style="width:auto; padding:5px 10px; font-size:0.7rem; background:#4a5568;">Edit</button>
-                            <button onclick="adminDeleteUser('${u.email}')" style="width:auto; padding:5px 10px; font-size:0.7rem; background:#ef4444;">Delete</button>
+                            <button onclick="adminEditName('${u.email}')" style="width:auto; padding:5px 10px; font-size:0.7rem; background:#4a5568; color:white; border:none; cursor:pointer; border-radius:4px;">Edit</button>
+                            <button onclick="adminDeleteUser('${u.email}')" style="width:auto; padding:5px 10px; font-size:0.7rem; background:#ef4444; color:white; border:none; cursor:pointer; border-radius:4px;">Delete</button>
                         </td>
                     </tr>`).join('');
 
@@ -241,7 +266,8 @@
 
         // Action: Delete User
         async function adminDeleteUser(email) {
-            if (email === userEmail) return alert("Security Alert: You cannot delete your own active admin account.");
+            const loggedInEmail = localStorage.getItem('userEmail');
+            if (email === loggedInEmail) return alert("Security Alert: You cannot delete your own active admin account.");
 
             if (confirm(`CRITICAL ACTION: Are you sure you want to PERMANENTLY delete account: ${email}? This cannot be undone.`)) {
                 try {
@@ -261,9 +287,9 @@
             }
         }
 
-        // Updated Logout: Confirms and returns to index.html
+        // Updated Logout: Confirms and clears localStorage
         function handleLogout() {
-            if (confirm("Log out of Admin Panel?")) {
+            if (confirm("Are you sure you want to logout of the Admin Panel?")) {
                 localStorage.removeItem('userEmail');
                 window.location.href = 'index.html';
             }
