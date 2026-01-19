@@ -2,9 +2,9 @@
 
 A comprehensive full-stack solution designed for the National Service Scheme (NSS) to manage volunteer registrations and track digital donations transparently.
 
-## 🚀 Deployment & Demo
-- **Live Website:** https://nss-volunteer-portal.vercel.app/
-- **Video Demonstration:** [Insert your Video Link here] (Covers Section 10-ii)
+## 🚀 Live Links
+- **Vercel Deployment:** [PASTE_YOUR_VERCEL_APP_URL_HERE]
+- **Video Demonstration:** [PASTE_YOUR_YOUTUBE_OR_DRIVE_LINK_HERE]
 
 ## 📋 Table of Contents
 - [Project Overview](#-project-overview)
@@ -19,18 +19,18 @@ This portal fulfills the requirements for a centralized volunteer management sys
 
 ## ✨ Features
 
-### 👤 Volunteer Side (Section 4.2)
-- **Unified Authentication:** Common login/register page with role-based access.
+### 👤 Volunteer Side
+- **Unified Authentication:** Common login/register page with role-based access and redirection.
 - **Donation Flow:** Support for custom donation amounts with real-time status tracking.
 - **User Dashboard:** View registration details and personal donation history.
-- **UX Enhancements:** Password visibility toggle and smooth loading transitions.
+- **UX Enhancements:** Password visibility toggle and smooth loading transitions to handle serverless cold starts.
 
-### 🛠️ Admin Side (Section 4.3)
+### 🛠️ Admin Side
 - **Admin Dashboard:** Instant view of total registrations and total funds collected.
 - **Registration Management:** View all users with advanced search and role-based filtering.
-- **Account Control:** Administrative ability to edit display names or delete accounts.
-- **Donation Management:** Full tracking of all transaction attempts with timestamps.
-- **Data Portability:** Export filtered registration or donation records to CSV.
+- **Account Control:** Administrative ability to edit display names or permanently delete accounts.
+- **Donation Management:** Full tracking of all transaction attempts with timestamps and aggregated amounts.
+- **Data Portability:** Export filtered registration or donation records to CSV for offline reporting.
 
 ## 💻 Tech Stack
 - **Frontend:** HTML5, CSS3, JavaScript (Vanilla).
@@ -43,20 +43,18 @@ This portal fulfills the requirements for a centralized volunteer management sys
 The application utilizes a **Client-Server Architecture**:
 1. **Client:** Static assets served from the `public` folder.
 2. **Serverless API:** Express handles logic through Vercel serverless functions.
-3. **Database:** Mongoose connects to MongoDB Atlas using an optimized connection strategy to handle serverless cold starts.
+3. **Database:** Mongoose connects to MongoDB Atlas using an optimized connection strategy to maintain stability in a serverless environment.
 
 
 
-## 🔐 Data & Payment Handling Rules (Section 7)
-- **Independence:** Registration data is saved to MongoDB immediately upon form submission.
+## 🔐 Data & Payment Handling Rules
+In compliance with project standards:
+- **Independence:** Registration data is saved to MongoDB immediately upon form submission, independent of donation completion.
 - **Integrity:** "Success" status is only granted after genuine gateway confirmation; no fake or forced logic is used.
-- **Transparency:** Failed and pending payment attempts are clearly recorded in the database.
+- **Transparency:** Failed and pending payment attempts are clearly recorded in the database for audit purposes.
 
 ## 🛠️ Setup Instructions
 1. Clone the repo: `git clone [Your Repo Link]`
 2. Install dependencies: `npm install`
 3. Configure `.env`: Add your `MONGODB_URI`
 4. Run locally: `node server.js`
-5. Deploy: Push to GitHub and link to Vercel for automatic deployment.
-
-
