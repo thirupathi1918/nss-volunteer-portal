@@ -6,6 +6,30 @@
     <title>NSS NGO Portal - Access</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* NEW: Styles for the Password Eye Toggle */
+        .password-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-container input {
+            width: 100%;
+            padding-right: 40px; /* Make space for the icon */
+        }
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 1.2rem;
+            color: #6366f1;
+            transition: transform 0.2s;
+        }
+        .toggle-password:hover {
+            transform: scale(1.1);
+        }
+    </style>
 </head>
 <body>
     <div class="background-animation">
@@ -32,8 +56,9 @@
                 <input type="email" id="email" placeholder="Email Address" required>
             </div>
             
-            <div class="input-group">
+            <div class="input-group password-container">
                 <input type="password" id="password" placeholder="Password" required>
+                <span class="toggle-password" id="eyeIcon" onclick="togglePassword()">👁️</span>
             </div>
             
             <a href="#" onclick="forgotPassword()" style="font-size: 0.8rem; color: #6366f1; display: block; text-align: left; margin: -5px 0 15px 5px; text-decoration: none; font-weight: 600;">Forgot Password?</a>
@@ -58,6 +83,20 @@
     <script>
         let isLogin = true;
 
+        // NEW: Toggle Password Visibility Function
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.innerText = '🙈'; // Closed eye emoji
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.innerText = '👁️'; // Open eye emoji
+            }
+        }
+
         function toggleForm() {
             isLogin = !isLogin;
             document.getElementById('nameGroup').style.display = isLogin ? "none" : "block";
@@ -76,7 +115,6 @@
                 action: action
             };
 
-            // FIX: Changed path to /api/auth for Vercel
             try {
                 const res = await fetch('/api/auth', {
                     method: 'POST',
@@ -88,7 +126,6 @@
 
                 if (res.ok) {
                     localStorage.setItem('userEmail', emailValue);
-                    // Ensure the paths match your actual filenames
                     window.location.href = roleValue === 'admin' ? '/admin.html' : '/dashboard.html';
                 } else {
                     alert(result.message || "Authentication failed");
@@ -103,7 +140,6 @@
             const email = document.getElementById('email').value;
             if(!email) return alert("Enter email first!");
             
-            // FIX: Changed path to /api/forgot-password for Vercel
             const res = await fetch('/api/forgot-password', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},

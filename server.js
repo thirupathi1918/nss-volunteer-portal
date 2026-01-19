@@ -28,9 +28,9 @@ const Donation = mongoose.models.Donation || mongoose.model('Donation', new mong
     id: Number, donorEmail: String, amount: Number, status: String, timestamp: String
 }));
 
-// 3. Auth Routes (Updated with connectDB)
+// 3. Auth Routes
 app.post('/api/auth', async (req, res) => {
-    await connectDB(); // Ensure DB is connected
+    await connectDB();
     const { email, password, role, action, name } = req.body;
     const user = await User.findOne({ email });
 
@@ -47,7 +47,30 @@ app.post('/api/auth', async (req, res) => {
     }
 });
 
-// 4. Donation Routes (Updated with connectDB)
+// NEW: Update Profile Route for Admin/Donor edits
+app.post('/api/update-profile', async (req, res) => {
+    await connectDB();
+    const { email, newName } = req.body;
+    try {
+        const updatedUser = await User.findOneAndUpdate(
+            { email: email },
+            { name: newName },
+            { new: true }
+        );
+        if (!updatedUser) return res.status(404).json({ status: "error", message: "User not found" });
+        res.json({ status: "success", message: "Profile updated successfully!", user: updatedUser });
+    } catch (err) {
+        res.status(500).json({ status: "error", message: "Update failed" });
+    }
+});
+
+// NEW: Forgot Password Placeholder
+app.post('/api/forgot-password', async (req, res) => {
+    // In a real app, you would integrate an email service here.
+    res.json({ message: "Password reset link sent to your email (Sandbox Mode)." });
+});
+
+// 4. Donation Routes
 app.post('/api/initiate-donation', async (req, res) => {
     await connectDB();
     const count = await Donation.countDocuments();

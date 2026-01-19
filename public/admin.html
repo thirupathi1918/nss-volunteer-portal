@@ -23,6 +23,12 @@
     <div class="container" style="width: 95%; max-width: 900px;">
         <div class="icon-header"><span style="font-size: 40px;">🛡️</span></div>
         <h1>Admin Management</h1>
+        
+        <div id="adminProfile" style="text-align: left; background: rgba(99, 102, 241, 0.1); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(99, 102, 241, 0.2);">
+            <p style="margin: 0; font-size: 0.9rem; color: #4a5568;"><strong>Admin Session:</strong></p>
+            <p style="margin: 5px 0 0 0; color: #1a3a5f;"><span id="adminDispName">Loading Name...</span> (<span id="adminDispEmail"></span>)</p>
+        </div>
+
         <p>Monitor registrations and donation analytics transparently.</p>
         
         <div style="display:flex; justify-content: space-around; margin-bottom: 25px; background: rgba(240, 244, 248, 0.7); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.5);">
@@ -38,17 +44,17 @@
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3 style="margin:0;">Registered Accounts</h3>
+            <h3 style="margin:0;">All Registered Accounts</h3>
             <button onclick="exportToCSV('userTable')" style="background: #2a9d8f; width: auto; padding: 8px 15px; font-size: 0.8rem; margin:0;">📥 Export Users</button>
         </div>
         <div style="overflow-x: auto; margin-bottom: 30px; border-radius: 12px; border: 1px solid #e2e8f0; background: white;">
             <table id="userTable" style="width:100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #f8fafc;">
-                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Name</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Email</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Role</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Action</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Name</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Email</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Role</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="userTableBody"></tbody>
@@ -63,10 +69,10 @@
             <table id="donationTable" style="width:100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #f8fafc;">
-                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Timestamp</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Donor Email</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Amount</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Status</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Timestamp</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Donor Email</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Amount</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Status</th>
                     </tr>
                 </thead>
                 <tbody id="donationTableBody"></tbody>
@@ -74,54 +80,82 @@
         </div>
         
         <br>
-        <button onclick="loadStats()" style="background: #6366f1; width: 200px; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">Refresh Analytics</button>
+        <button onclick="loadStats()" style="background: #6366f1; width: 200px; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">🔄 Refresh Analytics</button>
     </div>
 
     <script>
+        // AUTH CHECK & PROFILE HEADER
         const userEmail = localStorage.getItem('userEmail');
-        if (!userEmail) window.location.href = 'index.html';
+        if (!userEmail) {
+            window.location.href = 'index.html';
+        } else {
+            document.getElementById('adminDispEmail').innerText = userEmail;
+        }
 
         async function loadStats() {
             try {
-                // FIX: Path changed to /api/ for Vercel
+                // FETCH DATA FROM VERCEL API
                 const response = await fetch('/api/admin-stats');
                 const data = await response.json();
                 
+                // Set Header Name for the logged-in admin
+                const currentAdmin = data.allUsers.find(u => u.email === userEmail);
+                if (currentAdmin) {
+                    document.getElementById('adminDispName').innerText = currentAdmin.name;
+                }
+
                 document.getElementById('regCount').innerText = data.totalReg;
                 document.getElementById('totalAmt').innerText = "₹" + data.totalDonations;
 
+                // POPULATE ALL ACCOUNTS (ADMIN & DONOR)
                 document.getElementById('userTableBody').innerHTML = data.allUsers.map(u => `
                     <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">${u.name}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">${u.email}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;"><span style="font-weight:bold; color:#6366f1;">${u.role.toUpperCase()}</span></td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;"><button onclick="adminEditName('${u.email}')" style="width:auto; padding:5px 10px; font-size:0.7rem;">Edit</button></td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">${u.name}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">${u.email}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">
+                            <span style="font-weight:bold; color: ${u.role === 'admin' ? '#ef4444' : '#6366f1'};">
+                                ${u.role.toUpperCase()}
+                            </span>
+                        </td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">
+                            <button onclick="adminEditName('${u.email}')" style="width:auto; padding:5px 10px; font-size:0.7rem; background:#4a5568;">Edit</button>
+                        </td>
                     </tr>`).join('');
 
+                // POPULATE DONATIONS
                 document.getElementById('donationTableBody').innerHTML = data.allDonations.slice().reverse().map(d => `
                     <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">${d.timestamp}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">${d.donorEmail}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">₹${d.amount}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: ${d.status === 'success' ? '#10b981' : (d.status === 'failed' ? '#ef4444' : '#f59e0b')}">${d.status.toUpperCase()}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">${d.timestamp}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">${d.donorEmail}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">₹${d.amount}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: ${d.status === 'success' ? '#10b981' : (d.status === 'failed' ? '#ef4444' : '#f59e0b')}">
+                            ${d.status.toUpperCase()}
+                        </td>
                     </tr>`).join('');
 
             } catch (err) { console.error("Refresh failed:", err); }
         }
 
         async function adminEditName(email) {
-            const newName = prompt("Admin: Enter new name for account " + email);
+            const newName = prompt("Admin Action: Enter new display name for " + email);
             if (!newName || newName.trim() === "") return;
 
-            // FIX: Path changed to /api/ for Vercel
-            const res = await fetch('/api/update-profile', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ email, newName })
-            });
-            const result = await res.json();
-            alert(result.message);
-            loadStats();
+            try {
+                const res = await fetch('/api/update-profile', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, newName })
+                });
+                const result = await res.json();
+                if (result.status === "success") {
+                    alert("Account successfully updated!");
+                    loadStats(); // Reload to show new name in table and header
+                } else {
+                    alert("Update failed: " + result.message);
+                }
+            } catch (e) {
+                alert("Error connecting to server.");
+            }
         }
 
         function handleLogout() {
@@ -148,7 +182,7 @@
             a.click();
         }
 
-        loadStats();
+        loadStats(); // Initial data load
     </script>
 </body>
 </html>
