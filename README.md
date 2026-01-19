@@ -3,7 +3,7 @@
 A comprehensive full-stack solution designed for the National Service Scheme (NSS) to manage volunteer registrations and track digital donations transparently.
 
 ## 🚀 Live Links
-- **Vercel Deployment:** [PASTE_YOUR_VERCEL_APP_URL_HERE]
+- **Vercel Deployment:** https://nss-volunteer-portal.vercel.app/
 - **Video Demonstration:** [PASTE_YOUR_YOUTUBE_OR_DRIVE_LINK_HERE]
 
 ## 📋 Table of Contents
